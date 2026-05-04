@@ -8,19 +8,25 @@ use App\Models\ArtisanProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB; // Ajouté pour la sécurité des données
 
 class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        // 1. Validation renforcée
+        // 1. Validation ajustée (Client + Pro)
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'firstname' => 'required_if:role,pro|string|max:255', // Requis pour le design Pro
+            'birth_date' => 'required_if:role,pro|date',         // Requis pour le design Pro
             'phone' => 'required|string|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:client,pro',
-            // On ajoute la validation de la catégorie UNIQUEMENT si c'est un pro
+            
+            // Validation spécifique au profil Pro (Etape 3 du design)
             'category_id' => 'required_if:role,pro|exists:categories,id',
+            'experience_years' => 'required_if:role,pro',
+            'intervention_zone' => 'required_if:role,pro',
         ]);
 
         if ($validator->fails()) {
@@ -31,34 +37,42 @@ class AuthController extends Controller
         }
 
         try {
-            // 2. Création de l'utilisateur
-            $user = User::create([
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
-            ]);
-
-            // 3. Création du profil Artisan
-            if ($user->role === 'pro') {
-                ArtisanProfile::create([
-                    'user_id' => $user->id,
-                    'category_id' => $request->category_id,
-                    'is_available' => true, // On l'active par défaut
+            // On utilise une transaction pour éviter de créer un user si le profil pro plante
+            return DB::transaction(function () use ($request) {
+                
+                // 2. Création de l'utilisateur
+                $user = User::create([
+                    'name' => $request->name,
+                    'firstname' => $request->firstname, // Ajouté
+                    'birth_date' => $request->birth_date, // Ajouté
+                    'phone' => $request->phone,
+                    'password' => Hash::make($request->password),
+                    'role' => $request->role,
                 ]);
-            }
 
-            // 4. Token
-            $token = $user->createToken('auth_token')->plainTextToken;
+                // 3. Création du profil Artisan (avec les champs de ton design)
+                if ($user->role === 'pro') {
+                    ArtisanProfile::create([
+                        'user_id' => $user->id,
+                        'category_id' => $request->category_id,
+                        'experience_years' => $request->experience_years ?? 0,
+                        'base_location' => $request->intervention_zone, // Lié à ta migration
+                        'skills' => $request->specialty,               // Lié à ta migration
+                        'is_available' => true,
+                    ]);
+                }
 
-            return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => $user,
-            ], 201);
+                // 4. Token
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                return response()->json([
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => $user->load('artisanProfile'), // Charge le profil si c'est un pro
+                ], 201);
+            });
 
         } catch (\Exception $e) {
-            // En cas de gros pépin, on renvoie l'erreur précise au lieu d'une 500 vide
             return response()->json([
                 'message' => 'Erreur lors de la création',
                 'error' => $e->getMessage()
@@ -73,7 +87,8 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('phone', $request->phone)->first();
+        // On charge aussi le profil pro lors du login pour Flutter
+        $user = User::with('artisanProfile')->where('phone', $request->phone)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Identifiants incorrects'], 401);
