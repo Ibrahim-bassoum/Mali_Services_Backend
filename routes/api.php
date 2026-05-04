@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Client\CategoryController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/artisans', [App\Http\Controllers\Api\Client\ArtisanController::class, 'index']);
 
 // Routes protégées (nécessitent un Token)
 Route::middleware('auth:sanctum')->group(function () {
