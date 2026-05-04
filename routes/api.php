@@ -15,7 +15,11 @@ Route::get('/artisans', [App\Http\Controllers\Api\Client\ArtisanController::clas
 // Routes protégées (nécessitent un Token)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return response()->json([
+            'succes'=>true,
+            'data' => $request->user()
+        ]);
+
     });
     // Ajoute tes autres routes ici plus tard
 });
