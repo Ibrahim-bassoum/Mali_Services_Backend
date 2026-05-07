@@ -6,8 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Panel;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -40,4 +43,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(ArtisanProfile::class);
     }
+
+    public function canAccesPanel(Panel $panel1):bool
+        {
+            return true;
+        }
 }
