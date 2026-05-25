@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    public function updateStatus(Request$request)
+    {
+        $user = $request->user();
+        $user->is_available = $request->is_online;
+        $user->save();
+
+        return response()->json(['message'=>'Statut mis a jour','is_online'=>
+        $user->is_available]);
+    }
     /**
      * Display a listing of the resource.
      */

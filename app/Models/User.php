@@ -10,7 +10,7 @@ use Filament\Panel;
 use Filament\Models\Contracts\FilamentUser;
 
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable 
 {
     use HasApiTokens, HasFactory, Notifiable;
 
