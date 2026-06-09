@@ -80,26 +80,32 @@ class AuthController extends Controller
         }
     }
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'phone' => 'required',
-            'password' => 'required',
-        ]);
+   public function login(Request $request)
+{
+    $request->validate([
+        'phone' => 'required',
+        'password' => 'required',
+    ]);
 
-        // On charge aussi le profil pro lors du login pour Flutter
-        $user = User::with('artisanProfile')->where('phone', $request->phone)->first();
+    // 1. Chercher l'utilisateur
+    $user = User::with('artisanProfile')->where('phone', $request->phone)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Identifiants incorrects'], 401);
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
+    if (!$user) {
+        return response()->json(['message' => 'Ce numéro de téléphone n\'existe pas dans la base.'], 401);
     }
+
+    // 2. Vérifier le mot de passe
+    if (!Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Mot de passe incorrect pour ce numéro.'], 401);
+    }
+
+    // 3. Générer le Token si tout est bon
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'user' => $user,
+    ]);
+}
 }

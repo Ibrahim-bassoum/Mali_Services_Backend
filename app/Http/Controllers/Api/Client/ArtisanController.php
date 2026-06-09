@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Client;
 use App\Http\Controllers\Controller;
 use App\Models\ArtisanProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ArtisanController extends Controller
 {
@@ -33,4 +34,29 @@ class ArtisanController extends Controller
             'data' => $query->get()
         ]);
     }
+    public function obtenirArtisansProches(Request $request)
+{
+    // On récupère la latitude et la longitude envoyées par le client
+    $latClient = $request->input('latitude');
+    $lngClient = $request->input('longitude');
+    
+    // On définit le rayon de recherche (par exemple 10 kilomètres)
+    $rayon = 10;
+
+    // Requête pour calculer la distance
+    $artisans = DB::table('artisan_profiles')
+        ->selectRaw("id, latitude, longitude, 
+            (6371 * acos(cos(radians(?)) 
+            * cos(radians(latitude)) 
+            * cos(radians(longitude) - radians(?)) 
+            + sin(radians(?)) 
+            * sin(radians(latitude)))) AS distance", [$latClient, $lngClient, $latClient])
+        ->having("distance", "<", $rayon)
+        ->orderBy("distance", "asc")
+        ->get();
+
+    return response()->json($artisans);
+}
+
+
 }
