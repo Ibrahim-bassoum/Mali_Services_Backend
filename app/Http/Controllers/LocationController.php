@@ -8,31 +8,39 @@ use Illuminate\Support\Facades\Auth;
 
 class LocationController extends Controller
 {
-    public function update(Request $request)
-    {
-        // 1. Validation : on s'assure que les données sont bien présentes
+ public function update(Request $request)
+{
+    try {
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
 
-        // 2. Récupérer l'utilisateur connecté
         $user = Auth::user();
+        
+        // Debug : Affichez l'utilisateur pour vérifier qu'il est bien authentifié
+        if (!$user) return response()->json(['message' => 'Non authentifié'], 401);
 
-        // 3. Accéder à la relation 'artisanProfile' définie dans ton modèle User
-        $profile = $user->artisanProfile;
+        $profile = \App\Models\ArtisanProfile::where('user_id', $user->id)->first();
 
         if (!$profile) {
-            return response()->json(['message' => 'Profil artisan non trouvé pour cet utilisateur'], 404);
+            return response()->json(['message' => 'Profil artisan non trouvé'], 404);
         }
 
-        // 4. Mise à jour des coordonnées
         $profile->update([
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'last_active_at' => now(), // Mise à jour de l'horodatage
+            'last_active_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Localisation mise à jour avec succès']);
+        return response()->json(['message' => 'Succès']);
+
+    } catch (\Exception $e) {
+        // CELA VA VOUS MONTRER L'ERREUR RÉELLE DANS POSTMAN
+        return response()->json([
+            'message' => 'Erreur fatale',
+            'error' => $e->getMessage() 
+        ], 500);
     }
+}
 }

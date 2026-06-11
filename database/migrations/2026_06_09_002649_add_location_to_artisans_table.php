@@ -25,8 +25,8 @@ public function up(): void
      */
     public function down(): void
     {
-        Schema::table('ArtisanProfile', function (Blueprint $table) {
-            //
+        Schema::table('artisan_profiles', function (Blueprint $table) {
+            $table->dropColumn(['latitude', 'longitude', 'last_active_at']);
         });
     }
 };

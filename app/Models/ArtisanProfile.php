@@ -22,6 +22,9 @@ class ArtisanProfile extends Model
         'is_available',
         'is_verified',
         'rating_average',
+        'latitude',  //pour la geolocalisation
+        'longitude',
+        'last_active_at',
     ];
 
     /**

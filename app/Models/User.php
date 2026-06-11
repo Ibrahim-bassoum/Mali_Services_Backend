@@ -38,10 +38,10 @@ class User extends Authenticatable
         ];
     }
 
-    // Relation pour récupérer le profil artisan
+    // Relation pour récupérer le profil artisan et pour la geolocalisation
     public function artisanProfile()
     {
-        return $this->hasOne(ArtisanProfile::class);
+        return $this->hasOne(\App\Models\ArtisanProfile::class, 'user_id', 'id');
     }
 
     public function canAccesPanel(Panel $panel1):bool
